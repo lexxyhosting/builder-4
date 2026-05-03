@@ -1,0 +1,38 @@
+name: Build Flutter APK
+
+on:
+  repository_dispatch:
+    types: [build_apk] # Harus sama dengan event_type di script server
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '12.x'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.x.x' # Sesuaikan dengan versi Flutter kamu
+
+      - name: Download Project Zip
+        run: |
+          curl -L "${{ github.event.client_payload.zip_url }}" -o project.zip
+          unzip project.zip -d .
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ github.event.client_payload.build_id }} # Build ID dikirim dari server
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 1 # Hapus otomatis setelah 1 hari untuk hemat storage
